@@ -1,0 +1,195 @@
+PROGRAM DKD       
+        ImPlIcIt nOnE
+        INTEGER, PARAMETER :: nparticulas=1000
+        INTEGER :: i, intervalo,j,k
+        REAL*8 :: x, y,z, h, vx0, vy0, time_int, d0
+        REAL*8 :: G, T0, M0, pi, e, x0, y0, z0, t, v0, r
+        REAL*8 :: vel_x, vel_y, pos_x, pos_y, kpc, d  
+        REAL*8 :: ax_out, ay_out, az_out, Lx, Ly, Lz
+
+        REAL, ALLOCATABLE, DIMENSION(:) :: partx, party, partz, vx, vy, vz, ax, ay, az, U, x_old, y_old, z_old
+        REAL :: cinetica, potencial, dist, vcm_x, vcm_y, vcm_z, Vcm, Epot, cinetica_cm
+
+        open(10,file='nbody_out.dat',status='unknown')
+        open(12,file='particulas.dat',status='unknown')
+        open(13,file='energy.dat',status='unknown')
+        open(14,file='momentoangular.dat',status='unknown')
+        
+        cinetica=0
+        potencial=0
+
+        ALLOCATE(partx(nparticulas),party(nparticulas),partz(nparticulas),vx(nparticulas),vy(nparticulas),vz(nparticulas))
+        ALLOCATE(ax(nparticulas),ay(nparticulas),az(nparticulas),U(nparticulas),x_old(nparticulas),y_old(nparticulas), &
+        z_old(nparticulas))
+    !**********************************************************************************  
+        do j=1,nparticulas
+                read(12,*) x_old(j), y_old(j), z_old(j), vx(j), vy(j), vz(j)
+        enddo
+        close(12)
+         
+        ax=0
+        ay=0
+        az=0
+        Lx=0
+        Ly=0
+        Lz=0
+        U=0
+        e=0.9
+        G   = 43.03e3/(1e10) !kpc*(km/s)**2
+        M0  = 1e12/float(nparticulas) ! M interior Via lactea
+     !************************************** CALCULO LAS DISTANCIAS Y ACELERACIONES**           
+                do j=1, nparticulas-1
+                        x0 = x_old(j) 
+                        y0 = y_old(j) 
+                        z0 = z_old(j) 
+                        do k=j+1,nparticulas
+                                x = x_old(k) 
+                                y = y_old(k) 
+                                z = z_old(k) 
+                                call plummer(x0,y0,z0,x,y,z,nparticulas,ax_out,ay_out,az_out,r)
+                                ax(j) = ax(j) + ax_out
+                                ay(j) = ay(j) + ay_out
+                                az(j) = az(j) + az_out
+                                ax(k) = ax(k) - ax_out
+                                ay(k) = ay(k) - ay_out
+                                az(k) = az(k) - az_out
+                                Epot = G*M0/sqrt(r**2+e**2)
+                                U(j) = U(j) + Epot
+                                U(k) = U(k) + Epot
+                        enddo
+                enddo
+     !********************************* INTEGRO CON LF DKD ******************           
+                do j=1,nparticulas
+                                cinetica  = cinetica  + 0.5*(vx(j)**2+vy(j)**2+vz(j)**2) 
+                                potencial = potencial + U(j)/2.
+                                U(j) = 0
+
+                                Lx = Lx + (y_old(j)*vz(j) - z_old(j)*vy(j))
+                                Ly = Ly + (z_old(j)*vx(j) - x_old(j)*vz(j))
+                                Lz = Lz + (x_old(j)*vy(j) - y_old(j)*vx(j))
+                enddo
+        
+        print*,'Energia Inicial',cinetica - potencial
+        print*, Lx, Ly, Lz
+       stop 
+        !**********************************************************************************
+
+        pi  = acos(-1.)
+        G   = 43.03e3/(1e10) !kpc*(km/s)**2
+        M0  = 1e12/float(nparticulas) ! M interior Via lactea
+        T0  = (G*M0*float(nparticulas)/(1.33*pi*100**3))**(-0.5)  !periodo del sol en Gyr  
+        e   = .9                  !parametro ablandamiento
+
+      
+        t   = 0
+
+        ax = 0
+        ay = 0
+        az = 0
+        Lx=0
+        Ly=0
+        Lz=0
+        cinetica = 0
+        potencial = 0
+        U=0
+     !********************************************************************************
+        intervalo = 10000
+        time_int  = 1*T0
+        h         = time_int/intervalo
+        print*, h
+        do i=1,intervalo
+                t=t+h
+     !************************************** CALCULO LAS DISTANCIAS Y ACELERACIONES**           
+                do j=1, nparticulas-1
+                        x0 = x_old(j) + vx(j)*h/2.
+                        y0 = y_old(j) + vy(j)*h/2.
+                        z0 = z_old(j) + vz(j)*h/2.
+
+                        do k=j+1,nparticulas
+                                
+                                x = x_old(k) + vx(k)*h/2.
+                                y = y_old(k) + vy(k)*h/2.
+                                z = z_old(k) + vz(k)*h/2.
+
+                                call plummer(x0,y0,z0,x,y,z,nparticulas,ax_out,ay_out,az_out,r)
+                                
+                                ax(j) = ax(j) + ax_out
+                                ay(j) = ay(j) + ay_out
+                                az(j) = az(j) + az_out
+
+                                ax(k) = ax(k) - ax_out
+                                ay(k) = ay(k) - ay_out
+                                az(k) = az(k) - az_out
+
+                                Epot = G*M0/sqrt(r**2+e**2)
+                                U(j) = U(j) + Epot
+                                U(k) = U(k) + Epot
+                        enddo
+                enddo
+     !********************************* INTEGRO CON LF DKD ******************           
+                do j=1,nparticulas
+                                x0 = x_old(j) + vx(j)*h/2.
+                                y0 = y_old(j) + vy(j)*h/2.
+                                z0 = z_old(j) + vz(j)*h/2.
+                                
+                                vx(j) = vx(j) + ax(j)*h
+                                vy(j) = vy(j) + ay(j)*h
+                                vz(j) = vz(j) + az(j)*h
+                        
+                                x_old(j) = x0 + vx(j)*h/2.                  
+                                y_old(j) = y0 + vy(j)*h/2.                  
+                                z_old(j) = z0 + vz(j)*h/2.
+
+                                ax(j) = 0
+                                ay(j) = 0
+                                az(j) = 0
+     !****************************************************** ENERGIAS *****
+                                        
+                                cinetica  = cinetica  + 0.5*(vx(j)**2+vy(j)**2+vz(j)**2) 
+                                potencial = potencial + U(j)/2.
+
+                                Lx = Lx + (y_old(j)*vz(j) - z_old(j)*vy(j))
+                                Ly = Ly + (z_old(j)*vx(j) - x_old(j)*vz(j))
+                                Lz = Lz + (x_old(j)*vy(j) - y_old(j)*vx(j))
+
+                                U(j) = 0
+                                
+                enddo
+                                write(13,*)  cinetica , -potencial, i
+                                write(14,*) Lx, Ly, Lz, i
+                               
+                cinetica    = 0
+                potencial   = 0
+                Lx = 0
+                Ly = 0
+                Lz = 0
+        enddo
+        
+        do i=1,nparticulas
+                write(10,*) x_old(i), y_old(i), z_old(i)
+        enddo 
+        close(10)
+       ! close(11)
+        close(12)
+        close(13)
+        close(14)
+ endprogram
+SUBROUTINE plummer(x0,y0,z0,x,y,z,nparticulas,ax,ay,az,r)
+        iMpLiCiT nOnE
+        REAL*8 :: x0,y0,z0,x, y,z, ax, ay,az, G, M0, d, cte, e, r
+        INTEGER :: nparticulas
+        !M0 = 1.991e30
+        !G  = 6.6708e-11
+        G   = 43.03e3/(1e10) !kpc*(km/s)**2
+        M0  = 1e12/float(nparticulas) !Msol
+        r   = sqrt((x-x0)**2+(y-y0)**2+(z-z0)**2)
+        cte = (G*M0)
+        e   = .9 
+    !---------- potencial Plummer -----------
+        
+        ax  = cte*(x-x0)/(r**2+e**2)**1.5
+        ay  = cte*(y-y0)/(r**2+e**2)**1.5
+        az  = cte*(z-z0)/(r**2+e**2)**1.5
+
+
+ENDSUBROUTINE   

@@ -1,0 +1,21 @@
+program siete
+        implicit none  
+        real,parameter :: pi=acos(-1.), alpha=0 
+        integer,parameter :: n=5000   
+        real :: r, costita, fi, tita, x, y, z
+        integer :: i
+        open(77,file='7_alpha0.dat',status='unknown')
+        do i=1,n
+        call random_number(r)
+        call random_number(costita)
+        call random_number(fi)
+        r=r**(1./(alpha+3.))
+        tita=acos(costita)
+        fi=fi*2*pi
+        x=r*sin(tita)*cos(fi)
+        y=r*sin(tita)*sin(fi)
+        z=r*cos(tita)
+        write(77,*)x,y,z
+        enddo
+        close(77)
+endprogram       

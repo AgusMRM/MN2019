@@ -1,0 +1,31 @@
+program svn
+        implicit none
+        integer,parameter :: n=10000
+       real,parameter :: Rd=1.
+        real,parameter:: pi=acos(-1.)
+        integer :: i
+        real :: r,fi,x,y,rand,r0,e
+
+        open(10,file='ocho.dat',status='unknown')
+        do i=1,n
+                call random_number(fi)
+                call random_number(rand)
+
+                e = 1.
+                r0 = 1.
+
+                do while (e>.001)
+                        r = Rd*log((1 + r0/Rd)/(1-rand))  
+                        e = abs(r - r0)
+                        r0 = r
+                enddo
+                fi=fi*2*pi
+                x = r*cos(fi)
+                y = r*sin(fi)
+
+                write(10,*)  x,y
+        enddo 
+        close(10)  
+
+        
+endprogram svn
