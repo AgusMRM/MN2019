@@ -1,0 +1,43 @@
+module general
+        integer :: g, i
+        real :: x0,x1,x2,f
+        real :: x(3), z(3)
+        
+endmodule        
+program interpolacion_newton
+        use general
+        write(*,*) 'ingrese grado polinomio'
+        read(*,*) g
+
+        g=2
+
+        write(*,*) 'ingrese x0,x1,x2'
+        read(*,*) x0,x1,x2
+         x(1)=x0
+         x(2)=x1
+         x(3)=x2
+        
+        call dif_divididas(x0,x1,x2)
+
+        !print*, z 
+endprogram
+
+function dif(z1,z2)
+        real :: z1,z2,f,f2,f1 
+        f1=exp(-z1**2)
+        f2=exp(-z2**2)
+        f=(f2-f1)/(z2-z1)
+        return
+endfunction
+subroutine dif_divididas(x0,x1,x2)
+        use general
+
+        do i=0,g
+                z(i)=exp(-x(i)**2)
+        enddo
+        
+        do i=0,g
+              print*, i, i+1, dif(z(i),z(i+1))
+              if (i==g) cycle
+        enddo        
+endsubroutine

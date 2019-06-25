@@ -1,0 +1,43 @@
+program biseccion
+        implicit none        
+        integer :: i,j
+        real :: a,b,p
+        real :: x0, x1, z
+        write(*,*) 'ingrese intervalo a-b y numero n de iteraciones'
+        read(*,*) a, b, j
+        !print*, j 
+        call bisection(a,b,j,p)
+        print*, p        
+
+endprogram
+
+function f(x)
+        real :: f
+       ! f=exp(-x**2)-1.
+        f=3.*sin(x/2.)-x**3+1.
+        return
+endfunction
+
+
+subroutine bisection(a,b,j,p)
+        real :: a, b, p
+        integer :: j
+        
+        !print*, j
+         
+        do i=1,j
+        ! print*, i,p,f(a)
+        p=(a+b)/2.
+         if (f(a)*f(p)<0) then
+                 a=a
+         else
+                 a=p
+         endif
+         if (f(b)*f(p)<0) then
+                 b=b
+         else
+                 b=p
+         endif
+        enddo
+        
+endsubroutine
